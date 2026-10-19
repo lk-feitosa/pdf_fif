@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Ambientes virtuais
+.venv/
+venv/
+ENV/
+env/
+
+# Configurações e variáveis de ambiente sensíveis
+.env
+.env.local
+*.env
+!.env.example
+
+# Arquivos de entrada e saída (preserva pastas e documentação)
+upload/*
+!upload/LEIA-ME.txt
+!upload/.gitkeep
+saida/*
+!saida/LEIA-ME.txt
+!saida/.gitkeep
+saida/.web_sessions/
+*.zip
+
+# IDEs e editores
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

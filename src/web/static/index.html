@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF FIF — Separador Inteligente de Folhas de Frequência</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- Minimal Header -->
+  <header>
+    <div class="container header-inner">
+      <a href="/" class="brand">
+        <div class="brand-icon">📄</div>
+        <span class="brand-title">PDF FIF</span>
+      </a>
+
+      <div class="header-right">
+        <div class="engine-pill" id="engineStatusBadge" title="Status dos motores de IA e OCR">
+          <span class="engine-dot" id="engineDot"></span>
+          <span id="engineStatusText">Verificando motor...</span>
+        </div>
+        <button class="btn-icon" id="openSettingsBtn" title="Configurar API Gemini">
+          ⚙️ <span>Configurações</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Hero / Upload Section -->
+    <section class="hero" id="heroSection">
+      <h1>Separador de Folhas de Frequência</h1>
+      <p>Envie o PDF com as folhas (FIFs). O sistema identifica os servidores e você define se as páginas ficam separadas ou agrupadas.</p>
+
+      <!-- Dropzone -->
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="fileInput" accept="application/pdf" style="display: none;">
+        <div class="dropzone-icon">📥</div>
+        <h3>Arraste o PDF de frequências aqui</h3>
+        <p>ou clique para selecionar um arquivo</p>
+        <button class="btn-file" type="button" onclick="document.getElementById('fileInput').click()">
+          Selecionar Arquivo
+        </button>
+      </div>
+
+      <!-- Quick Uploads list -->
+      <div class="quick-uploads" id="availableUploadsSection" style="display: none;">
+        <span style="font-size: 0.78rem; color: var(--text-dim);">Arquivos em upload/:</span>
+        <div id="availableUploadsList" style="display: inline-flex; gap: 6px; flex-wrap: wrap;"></div>
+      </div>
+    </section>
+
+    <!-- Loading State -->
+    <section class="loading-box" id="loadingSection">
+      <div class="spinner"></div>
+      <h3 id="loadingTitle" style="font-size: 0.95rem; font-weight: 600;">Lendo páginas do documento...</h3>
+      <p id="loadingSubtitle" style="font-size: 0.8rem; color: var(--text-dim); margin-top: 4px;">Identificando servidores via OCR direcionado e IA</p>
+    </section>
+
+    <!-- Main Workspace (Review & Grouping) -->
+    <section id="reviewSection" style="display: none;">
+
+      <!-- Minimalist Toolbar Strip -->
+      <div class="toolbar-strip">
+        <div class="doc-meta">
+          <span class="doc-name" id="docInfoTitle">documento.pdf</span>
+          <span class="doc-badge" id="docInfoSub">6 páginas</span>
+          <button class="btn-icon" id="resetBtn" style="padding: 3px 8px; font-size: 0.75rem;">
+            Trocar PDF
+          </button>
+        </div>
+
+        <div class="config-row">
+          <!-- Prefixo -->
+          <div class="prefix-input-group">
+            <span class="prefix-label">Prefixo:</span>
+            <input type="text" class="input-prefix" id="inputPrefixo" value="2026_07_" placeholder="2026_07_">
+          </div>
+
+          <!-- Formato do Nome -->
+          <select class="select-format" id="nameFormatSelect">
+            <option value="{nome}">Nome Completo</option>
+            <option value="{primeiro_nome}">Primeiro Nome</option>
+            <option value="{primeiro_nome}_{sobrenome}">Primeiro e Sobrenome</option>
+            <option value="{matricula}_{nome}">Matrícula + Nome</option>
+          </select>
+
+          <!-- Live Preview -->
+          <div class="preview-pill" id="filenamePreview" title="Exemplo do primeiro arquivo gerado">
+            2026_07_alvaro_nunes_prestes.pdf
+          </div>
+        </div>
+      </div>
+
+      <!-- Grouping & Action Bar -->
+      <div class="group-actions-bar">
+        <div class="group-status">
+          <strong id="summaryCount">6 arquivos</strong> a serem gerados
+          <span style="font-size: 0.78rem; color: var(--text-dim); margin-left: 8px;">(marque páginas ou use "Juntar" para mesclar em um só arquivo)</span>
+        </div>
+
+        <!-- Floating Multi-select action -->
+        <div class="selection-toolbar" id="selectionToolbar">
+          <span style="font-size: 0.78rem; color: #c7d2fe;" id="selectionCount">0 selecionadas</span>
+          <button class="btn-merge" id="btnMergeSelected">🔗 Juntar em 1 arquivo</button>
+          <button class="btn-icon" id="btnClearSelection" style="border: none; padding: 2px 6px;">✕</button>
+        </div>
+      </div>
+
+      <!-- Cards Grid of Output Files -->
+      <div class="cards-grid" id="pagesGrid">
+        <!-- Generated by app.js -->
+      </div>
+
+      <!-- Floating Bottom Execute Bar -->
+      <div class="bottom-bar">
+        <div class="bottom-summary" id="bottomSummaryText">
+          6 arquivos prontos para gerar
+        </div>
+        <button class="btn-execute" id="splitBtn">
+          ✨ Separar e Baixar ZIP
+        </button>
+      </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="results-box" id="resultsSection">
+      <div class="results-top">
+        <div>
+          <h2 style="font-size: 1.15rem; font-weight: 700; color: #34d399;">✓ Separação Concluída</h2>
+          <p style="font-size: 0.82rem; color: var(--text-dim); margin-top: 2px;" id="resultsSub">Arquivos salvos em saida/</p>
+        </div>
+        <a id="downloadZipBtn" class="btn-zip" href="#">
+          📦 Baixar Arquivo ZIP
+        </a>
+      </div>
+
+      <div class="files-list" id="resultsList">
+        <!-- Items generated by app.js -->
+      </div>
+    </section>
+  </main>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="font-size: 1rem; font-weight: 600;">Configurações da IA</h3>
+        <button class="btn-close" id="closeSettingsBtn">&times;</button>
+      </div>
+
+      <form id="settingsForm">
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px;">
+            Chave API Google Gemini (opcional)
+          </label>
+          <input type="password" class="card-input-name" id="geminiApiKeyInput" placeholder="AIzaSy...">
+          <small style="color: var(--text-dim); display: block; margin-top: 4px; font-size: 0.75rem;">
+            Se vazia, o sistema usa o OCR local automático.
+          </small>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px;">
+            Modelo
+          </label>
+          <select class="select-format" id="geminiModelSelect" style="width: 100%;">
+            <option value="gemini-2.5-flash">gemini-2.5-flash (Recomendado)</option>
+            <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+            <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+          </select>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 8px;">
+          <button type="button" class="btn-icon" id="cancelSettingsBtn">Cancelar</button>
+          <button type="submit" class="btn-file" style="background: var(--primary); color: var(--primary-text); font-weight: 600;">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Image Zoom Modal -->
+  <div class="modal-overlay" id="imageViewerModal" style="cursor: zoom-out;">
+    <img id="modalImg" class="image-modal-img" src="" alt="Página Completa">
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
