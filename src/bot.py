@@ -27,42 +27,37 @@ load_dotenv()
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
-)
+from datetime import datetime
+
 logger = logging.getLogger(__name__)
 
 HELP_TEXT = """
-📄 *PDF FIF — Separador de Frequência*
+📄 *PDF FIF — Bot Separador de Folhas de Frequência*
 
-Envie um PDF com várias folhas de frequência e receba os arquivos separados por pessoa.
+Envie um PDF com as folhas de frequência e receba um `.ZIP` com todos os PDFs individuais já separados e nomeados.
 
-*Comandos:*
-/start — Mostra esta ajuda
-/config — Ver configuração atual
-/ano 2026 — Define o ano nos nomes
-/mes 08 — Define o mês nos nomes
-/formato `2026_08_*nome*.pdf` — Define o padrão do nome
+*Comandos de Configuração:*
+• `/prefixo 2026_07_` — Define o prefixo antes do nome
+• `/config` — Ver prefixo e formato atual
+• `/formato {prefixo}{nome}.pdf` — Define padrão avançado
 
-*Placeholders:*
-`*nome*` ou `{primeiro_nome}` — primeiro nome
-`*nome_completo*` ou `{nome}` — nome completo
-`*sobrenome*` `{ano}` `{mes}` `{pagina}`
-
-*Como usar:*
-1. Configure ano, mês e formato (opcional)
-2. Envie o PDF como documento
-3. Receba um ZIP com os PDFs separados
-
-*Exemplo de nome gerado:*
-`2026_08_joao.pdf`
+*Exemplo de uso:*
+1. Digite: `/prefixo 2026_07_`
+2. Envie o PDF como **Documento**
+3. Receba o `.ZIP` com os arquivos:
+   • `2026_07_alvaro_nunes_prestes.pdf`
+   • `2026_07_victor_otavio.pdf`
 """.strip()
 
 
 def _user_config(context: ContextTypes.DEFAULT_TYPE) -> dict:
     if "config" not in context.user_data:
+        now = datetime.now()
         context.user_data["config"] = {
-            "template": default_template(),
-            "ano": None,
-            "mes": None,
+            "prefixo": f"{now.year}_{now.month:02d}_",
+            "template": "{prefixo}{nome}.pdf",
+            "ano": str(now.year),
+            "mes": f"{now.month:02d}",
         }
     return context.user_data["config"]
 
@@ -73,13 +68,30 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def cmd_config(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     cfg = _user_config(context)
+    prefixo = cfg.get("prefixo", "")
     text = (
         "⚙️ *Configuração atual:*\n\n"
-        f"Ano: `{cfg['ano'] or 'automático (atual)'}`\n"
-        f"Mês: `{cfg['mes'] or 'automático (atual)'}`\n"
-        f"Formato: `{cfg['template']}`"
+        f"• *Prefixo:* `{prefixo or '(sem prefixo)'}`\n"
+        f"• *Formato:* `{cfg['template']}`\n\n"
+        f"Exemplo de saída: `{prefixo}alvaro_nunes_prestes.pdf`\n\n"
+        "Para alterar o prefixo digite:\n"
+        "`/prefixo 2026_07_`"
     )
     await update.message.reply_text(text, parse_mode="Markdown")
+
+
+async def cmd_prefixo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not context.args:
+        await update.message.reply_text("Uso: `/prefixo 2026_07_` ou `/prefixo FIF_`", parse_mode="Markdown")
+        return
+    prefix = context.args[0].strip()
+    cfg = _user_config(context)
+    cfg["prefixo"] = prefix
+    await update.message.reply_text(
+        f"✓ *Prefixo definido:*\n`{prefix}`\n\n"
+        f"Exemplo de arquivo: `{prefix}alvaro_nunes_prestes.pdf`",
+        parse_mode="Markdown",
+    )
 
 
 async def cmd_ano(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -93,7 +105,7 @@ async def cmd_ano(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def cmd_mes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not context.args:
-        await update.message.reply_text("Uso: /mes 08")
+        await update.message.reply_text("Uso: /mes 07")
         return
     cfg = _user_config(context)
     cfg["mes"] = context.args[0]
@@ -103,8 +115,8 @@ async def cmd_mes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def cmd_formato(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not context.args:
         await update.message.reply_text(
-            "Uso: /formato 2026_08_{primeiro_nome}.pdf\n\n"
-            "Placeholders: {ano} {mes} {nome} {primeiro_nome} {sobrenome} {pagina}"
+            "Uso: /formato {prefixo}{nome}.pdf\n\n"
+            "Tags disponíveis: {prefixo} {nome} {primeiro_nome} {sobrenome} {matricula}"
         )
         return
     cfg = _user_config(context)
@@ -137,6 +149,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 input_pdf,
                 output_dir,
                 template=cfg["template"],
+                prefixo=cfg.get("prefixo"),
                 ano=cfg["ano"],
                 mes=cfg["mes"],
             )
@@ -193,6 +206,7 @@ def main() -> None:
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("help", cmd_start))
     app.add_handler(CommandHandler("config", cmd_config))
+    app.add_handler(CommandHandler(["prefixo", "p"], cmd_prefixo))
     app.add_handler(CommandHandler("ano", cmd_ano))
     app.add_handler(CommandHandler("mes", cmd_mes))
     app.add_handler(CommandHandler("formato", cmd_formato))
