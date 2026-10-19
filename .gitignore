@@ -26,6 +26,10 @@ saida/*
 !saida/.gitkeep
 saida/.web_sessions/
 *.zip
+*.pdf
+*.png
+*.jpg
+*.jpeg
 
 # IDEs e editores
 .idea/
