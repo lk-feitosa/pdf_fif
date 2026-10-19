@@ -1,0 +1,15 @@
+[Unit]
+Description=PDF FIF Telegram Bot Service
+After=network.target
+
+[Service]
+Type=simple
+User=lk-codex
+WorkingDirectory=/home/lk-codex/Documentos/PROJETOS/pdf_fif
+ExecStart=/home/lk-codex/Documentos/PROJETOS/pdf_fif/.venv/bin/python main.py bot
+Restart=always
+RestartSec=10
+EnvironmentFile=/home/lk-codex/Documentos/PROJETOS/pdf_fif/.env
+
+[Install]
+WantedBy=default.target
