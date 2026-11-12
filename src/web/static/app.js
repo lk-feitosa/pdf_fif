@@ -6,6 +6,9 @@ const state = {
   sessionId: null,
   filename: null,
   totalPages: 0,
+  detectedAno: null,
+  detectedMes: null,
+  suggestedPrefix: null,
   groups: [], // Array de arquivos a serem gerados: { id, person_name, matricula, cargo, source, page_numbers, selected }
   rawPages: [], // Páginas originais extraídas
   systemStatus: null,
@@ -36,10 +39,18 @@ const modalImg = document.getElementById('modalImg');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+  const now = new Date();
+  const defYear = now.getFullYear();
+  const defMonth = String(now.getMonth() + 1).padStart(2, '0');
+  state.detectedAno = String(defYear);
+  state.detectedMes = defMonth;
+  if (!inputPrefixo.value) {
+    inputPrefixo.value = `${defYear}_${defMonth}_`;
+  }
   loadSystemStatus();
   loadAvailableUploads();
   setupEventListeners();
-  updateFilenamePreview();
+  updateAllFilenamePreviews();
 });
 
 // Fetch system status
@@ -125,8 +136,8 @@ function setupEventListeners() {
     }
   });
 
-  inputPrefixo.addEventListener('input', updateFilenamePreview);
-  nameFormatSelect.addEventListener('change', updateFilenamePreview);
+  inputPrefixo.addEventListener('input', updateAllFilenamePreviews);
+  nameFormatSelect.addEventListener('change', updateAllFilenamePreviews);
 
   splitBtn.addEventListener('click', handleSplitPdf);
   resetBtn.addEventListener('click', resetWorkspace);
@@ -170,7 +181,7 @@ async function handleFileUpload(file) {
     if (!uploadRes.ok) throw new Error('Falha no upload');
 
     const uploadData = await uploadRes.json();
-    initSession(uploadData.session_id, uploadData.filename, uploadData.total_pages);
+    initSession(uploadData.session_id, uploadData.filename, uploadData.total_pages, uploadData);
   } catch (err) {
     alert(`Erro: ${err.message}`);
     resetWorkspace();
@@ -189,17 +200,24 @@ async function handleLoadUploadFile(filename) {
     if (!loadRes.ok) throw new Error('Falha ao abrir arquivo');
 
     const uploadData = await loadRes.json();
-    initSession(uploadData.session_id, uploadData.filename, uploadData.total_pages);
+    initSession(uploadData.session_id, uploadData.filename, uploadData.total_pages, uploadData);
   } catch (err) {
     alert(`Erro: ${err.message}`);
     resetWorkspace();
   }
 }
 
-async function initSession(sessionId, filename, totalPages) {
+async function initSession(sessionId, filename, totalPages, initialData = {}) {
   state.sessionId = sessionId;
   state.filename = filename;
   state.totalPages = totalPages;
+
+  if (initialData && initialData.suggested_prefix) {
+    state.detectedAno = initialData.detected_ano;
+    state.detectedMes = initialData.detected_mes;
+    state.suggestedPrefix = initialData.suggested_prefix;
+    inputPrefixo.value = initialData.suggested_prefix;
+  }
 
   document.getElementById('loadingTitle').textContent = `Identificando servidores nas ${totalPages} páginas...`;
   try {
@@ -210,6 +228,13 @@ async function initSession(sessionId, filename, totalPages) {
 
     const analyzeData = await analyzeRes.json();
     state.rawPages = analyzeData.pages;
+
+    if (analyzeData.suggested_prefix) {
+      state.detectedAno = analyzeData.detected_ano;
+      state.detectedMes = analyzeData.detected_mes;
+      state.suggestedPrefix = analyzeData.suggested_prefix;
+      inputPrefixo.value = analyzeData.suggested_prefix;
+    }
 
     // Inicializa: por padrão 1 folha por arquivo
     state.groups = state.rawPages.map((p, idx) => ({
@@ -279,6 +304,16 @@ function renderReview() {
           ${group.matricula ? `<span class="meta-chip">Mat: <b>${escapeHtml(group.matricula)}</b></span>` : ''}
           ${group.cargo ? `<span class="meta-chip" title="${escapeHtml(group.cargo)}">${escapeHtml(group.cargo.substring(0, 22))}...</span>` : ''}
         </div>
+
+        <!-- Preview individual do arquivo deste card -->
+        <div class="card-file-preview">
+          <div class="card-file-preview-header">
+            <span class="file-preview-label">📄 PDF Gerado</span>
+          </div>
+          <div class="card-file-preview-name" id="card-filename-${index}">
+            ...
+          </div>
+        </div>
       </div>
 
       <div class="card-footer">
@@ -317,7 +352,7 @@ function renderReview() {
     const nameInput = card.querySelector('.card-input-name');
     nameInput.addEventListener('input', (e) => {
       group.person_name = e.target.value.trim();
-      if (index === 0) updateFilenamePreview();
+      updateAllFilenamePreviews();
     });
 
     const btnMergeNext = card.querySelector('[data-action="merge-next"]');
@@ -333,7 +368,7 @@ function renderReview() {
     pagesGrid.appendChild(card);
   });
 
-  updateFilenamePreview();
+  updateAllFilenamePreviews();
   updateSelectionToolbar();
 }
 
@@ -423,21 +458,9 @@ function updateCounts() {
   bottomSummaryText.textContent = `${count} ${count === 1 ? 'arquivo pronto' : 'arquivos prontos'} para gerar`;
 }
 
-// Filename preview
-function updateFilenamePreview() {
-  const prefix = (inputPrefixo.value || '').trim();
-  const format = nameFormatSelect.value || '{nome}';
-
-  let rawName = 'alvaro_nunes_prestes';
-  let primeiroNome = 'alvaro';
-  let sobrenome = 'prestes';
-  let matricula = '7971';
-
-  if (state.groups && state.groups.length > 0) {
-    const first = state.groups[0];
-    rawName = first.person_name || 'servidor';
-    matricula = first.matricula || '';
-  }
+// Filename formatting and live preview for each card
+function formatFilenameForPerson(rawName, matricula, prefix, format) {
+  if (!rawName) rawName = 'servidor';
 
   const cleanName = rawName
     .normalize('NFD')
@@ -447,23 +470,82 @@ function updateFilenamePreview() {
     .toLowerCase()
     .replace(/[\s_]+/g, '_');
 
-  const parts = cleanName.split('_').filter(Boolean);
-  primeiroNome = parts[0] || 'nome';
-  sobrenome = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+  const rawParts = cleanName.split('_').filter(Boolean);
+  let primeiroNome = 'nome';
+  let sobrenome = 'sobrenome';
+
+  if (rawParts.length > 0) {
+    primeiroNome = rawParts[0];
+    sobrenome = rawParts[rawParts.length - 1];
+
+    // Se o último sobrenome for preposição/partícula de ligação (ex: de, da, do, das, dos, e), tenta o anterior
+    const preposicoes = new Set(['da', 'de', 'do', 'das', 'dos', 'e']);
+    if (rawParts.length > 2 && preposicoes.has(sobrenome)) {
+      sobrenome = rawParts[rawParts.length - 2];
+    }
+  }
+
+  const cleanMatricula = (matricula || '')
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\w\s-]/g, '')
+    .trim()
+    .replace(/[\s_]+/g, '_');
 
   let namePart = format
-    .replace('{nome}', cleanName)
-    .replace('{primeiro_nome}', primeiroNome)
-    .replace('{sobrenome}', sobrenome)
-    .replace('{matricula}', matricula);
+    .replace(/{nome}/g, cleanName)
+    .replace(/{primeiro_nome}/g, primeiroNome)
+    .replace(/{sobrenome}/g, sobrenome)
+    .replace(/{matricula}/g, cleanMatricula);
 
-  let finalName = `${prefix}${namePart}`;
-  finalName = finalName.replace(/_{2,}/g, '_').replace(/[<>:"/\\|?*]/g, '');
+  let finalName = `${prefix || ''}${namePart}`;
+  finalName = finalName
+    .replace(/_{2,}/g, '_')
+    .replace(/-_+/g, '-')
+    .replace(/[<>:"/\\|?*]/g, '');
+
   if (!finalName.toLowerCase().endsWith('.pdf')) {
     finalName += '.pdf';
   }
+  return finalName;
+}
 
-  filenamePreview.textContent = finalName;
+function updateAllFilenamePreviews() {
+  const prefix = (inputPrefixo.value || '').trim();
+  const format = nameFormatSelect.value || '{primeiro_nome}_{sobrenome}';
+  const used = {};
+
+  if (state.groups && state.groups.length > 0) {
+    state.groups.forEach((group, idx) => {
+      let baseFilename = formatFilenameForPerson(group.person_name, group.matricula, prefix, format);
+      let finalFilename = baseFilename;
+
+      if (used[baseFilename]) {
+        used[baseFilename]++;
+        const stem = baseFilename.toLowerCase().endsWith('.pdf') ? baseFilename.slice(0, -4) : baseFilename;
+        finalFilename = `${stem}_${used[baseFilename]}.pdf`;
+      } else {
+        used[baseFilename] = 1;
+      }
+
+      group.computedFilename = finalFilename;
+
+      const el = document.getElementById(`card-filename-${idx}`);
+      if (el) {
+        el.textContent = finalFilename;
+      }
+    });
+
+    if (filenamePreview) {
+      filenamePreview.textContent = state.groups[0].computedFilename || formatFilenameForPerson(state.groups[0].person_name, state.groups[0].matricula, prefix, format);
+    }
+  } else {
+    const demo = formatFilenameForPerson('carlos_bruno_freitas_sardinha', '1188477', prefix, format);
+    if (filenamePreview) {
+      filenamePreview.textContent = demo;
+    }
+  }
 }
 
 // Split & Download
@@ -472,12 +554,14 @@ async function handleSplitPdf() {
   splitBtn.innerHTML = '⏳ Gerando PDFs...';
 
   const prefix = inputPrefixo.value.trim();
-  const format = nameFormatSelect.value || '{nome}';
+  const format = nameFormatSelect.value || '{primeiro_nome}_{sobrenome}';
   const template = `{prefixo}${format}.pdf`;
 
   const payload = {
     template: template,
     prefixo: prefix,
+    ano: state.detectedAno,
+    mes: state.detectedMes,
     groups: state.groups.map(g => ({
       person_name: g.person_name,
       page_numbers: g.page_numbers,
@@ -536,13 +620,26 @@ function renderResults(data) {
 
 function resetWorkspace() {
   state.sessionId = null;
+  state.filename = null;
+  state.totalPages = 0;
   state.groups = [];
   state.rawPages = [];
   fileInput.value = '';
+
+  const now = new Date();
+  const defYear = now.getFullYear();
+  const defMonth = String(now.getMonth() + 1).padStart(2, '0');
+  state.detectedAno = String(defYear);
+  state.detectedMes = defMonth;
+  inputPrefixo.value = `${defYear}_${defMonth}_`;
+
   heroSection.style.display = 'block';
   loadingSection.style.display = 'none';
   reviewSection.style.display = 'none';
   resultsSection.style.display = 'none';
+
+  loadAvailableUploads();
+  updateAllFilenamePreviews();
 }
 
 async function handleSaveSettings(e) {

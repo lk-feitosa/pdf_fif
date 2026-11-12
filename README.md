@@ -1,117 +1,116 @@
-# PDF FIF — Separador Inteligente de Folhas de Frequência 🚀
+<div align="center">
 
-Aplicação moderna para processamento de folhas de frequência/ponto individuais (FIF). Recebe um arquivo PDF contendo múltiplas páginas, identifica o nome do servidor/colaborador de cada folha via **IA Google Gemini Vision** ou **OCR Local Inteligente**, e gera automaticamente arquivos PDF individuais já nomeados e organizados em ZIP.
+  <h1>📄 PDF FIF</h1>
+  <p><strong>Separador Inteligente de Folhas Individuais de Frequência (FIF)</strong></p>
+
+  <p>
+    <a href="https://render.com/deploy?repo=https://github.com/lk-feitosa/pdf_fif">
+      <img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render">
+    </a>
+  </p>
+
+  <p>
+    <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python">
+    <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI">
+    <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker">
+    <img src="https://img.shields.io/badge/Google%20Gemini-Vision-4285F4?style=flat-square&logo=google&logoColor=white" alt="Gemini">
+    <img src="https://img.shields.io/badge/Tesseract-OCR-555555?style=flat-square" alt="Tesseract">
+  </p>
+
+  <br>
+
+  <img src="docs/preview.jpg" alt="Interface PDF FIF" width="850" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 8px 30px rgba(0,0,0,0.5);">
+
+  <br><br>
+</div>
 
 ---
 
-## ✨ Principais Recursos
+## 💡 O que é?
 
-- 🌐 **Interface Web Moderna e Interativa (SPA)**:
-  - Drag-and-drop de arquivos PDF (suporta arquivos pesados e dezenas de páginas).
-  - Miniaturas visuais em alta definição de cada página do documento.
-  - Conferência e edição inline dos nomes detectados antes de salvar.
-  - Construtor interativo de padrões de nomenclatura com tags dinâmicas e preview em tempo real.
-  - Download em lote compactado em arquivo `.ZIP` ou download individual de cada folha.
-- 🤖 **Motor Híbrido de Reconhecimento**:
-  - **Google Gemini Vision AI (`gemini-2.5-flash`)**: Reconhecimento visual com 100% de precisão para documentos manuscritos, escaneados, carimbados ou em layouts complexos.
-  - **OCR Local Inteligente (PyMuPDF + Tesseract direcionado)**: 100% offline e gratuito. Foca nas zonas de identificação (cabeçalho e rodapé), eliminando ruídos de tabelas e assinaturas.
-- ⚙️ **Regras Flexíveis de Separação**:
-  - *1 folha por pessoa*: Cada página vira um arquivo separado.
-  - *Agrupar páginas consecutivas*: Agrupa folhas de quem possui 2 ou mais páginas na mesma frequência.
-- 💬 **Interfaces Múltiplas**:
-  - Web UI no navegador (`http://localhost:8000`)
-  - Terminal interativo (`python main.py --terminal`)
-  - Linha de comando direta / CLI (`python main.py upload/arquivo.pdf`)
-  - Bot do Telegram (`python main.py bot`)
+O **PDF FIF** recebe um arquivo PDF contendo dezenas ou centenas de folhas de ponto/frequência escaneadas, identifica automaticamente o nome de cada servidor (via **OCR Local** ou **Google Gemini Vision**) e gera arquivos individuais renomeados e prontos para download em `.ZIP`.
 
 ---
 
-## 🚀 Como Iniciar
+## ✨ Recursos
 
-### 1. Iniciar a Interface Web (Recomendado)
+- 🔍 **Reconhecimento Híbrido**: Google Gemini Vision (`gemini-2.5-flash`) ou Tesseract OCR Local 100% offline.
+- 📅 **Detecção Automática de Período**: Reconhece automaticamente o mês e ano no cabeçalho ou no nome do arquivo (ex: `2026_10_`).
+- 🏷️ **Nomenclatura Dinâmica**: Padrão inteligente (`2026_10_carlos_sardinha.pdf`) com pré-visualização em tempo real em cada card.
+- 🔗 **Agrupamento Flexível**: Botão de *Juntar com próxima* caso um colaborador possua 2 ou mais páginas na mesma folha.
+- 📦 **Download Rápido**: Baixe individualmente ou tudo compactado em um único `.ZIP`.
+- 🌐 **Web SPA Moderna**: Interface escura estilo Linear / Vercel com zoom de miniaturas.
 
-Basta executar o script de inicialização:
+---
+
+## ☁️ Deploy no Render (1 Clique)
+
+Você pode hospedar gratuitamente no **Render**:
+
+1. Clique no botão abaixo:
+
+   [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/lk-feitosa/pdf_fif)
+
+2. Conecte sua conta do GitHub.
+3. Defina a variável de ambiente opcional `GEMINI_API_KEY` (se for utilizar a IA do Gemini).
+4. O Render detectará automaticamente o [`Dockerfile`](Dockerfile) e o [`render.yaml`](render.yaml) e subirá a aplicação.
+
+---
+
+## 🚀 Como Rodar Localmente
+
+### Opção 1: Direto com Python
 
 ```bash
+# Clone o repositório
+git clone https://github.com/lk-feitosa/pdf_fif.git
+cd pdf_fif
+
+# Inicie o script (cria ambiente e instala dependências automaticamente)
 ./run.sh
 ```
 
-Ou diretamente com o Python do ambiente virtual:
+Acesse: **`http://localhost:8000`**
+
+### Opção 2: Com Docker
 
 ```bash
-source .venv/bin/activate
-python main.py
+docker build -t pdf-fif .
+docker run -p 8000:8000 pdf-fif
 ```
 
-O sistema abrirá automaticamente a interface em: **`http://localhost:8000`**
+Acesse: **`http://localhost:8000`**
 
 ---
 
-## 🔑 Configuração da API do Google Gemini (Opcional)
+## ⚙️ Variáveis de Ambiente
 
-A IA do Gemini é opcional. Se não configurada, o sistema usa o **OCR Local Inteligente** automaticamente.
+Crie um arquivo `.env` na raiz (ou configure no painel do Render):
 
-Para ativar o Gemini:
-1. Obtenha uma chave gratuita no [Google AI Studio](https://aistudio.google.com/).
-2. Insira no arquivo `.env`:
-   ```env
-   GEMINI_API_KEY=sua_chave_aqui
-   GEMINI_MODEL=gemini-2.5-flash
-   ```
-3. *Ou configure direto na Web UI*, clicando no botão **⚙️ Configurações** no topo da página.
+| Variável | Obrigatória | Padrão | Descrição |
+|---|:---:|:---:|---|
+| `GEMINI_API_KEY` | Não | *vazia* | Chave da API do Google Gemini Studio (se não informada, usa OCR local). |
+| `GEMINI_MODEL` | Não | `gemini-2.5-flash` | Modelo do Gemini para leitura visual. |
+| `PORT` | Não | `8000` | Porta onde o servidor FastAPI responderá. |
 
 ---
 
-## 🏷️ Padrões de Nomenclatura dos Arquivos
+## 📁 Estrutura do Projeto
 
-Você pode personalizar o nome dos arquivos de saída com as seguintes tags:
-
-| Tag | Descrição | Exemplo |
-|---|---|---|
-| `{nome}` | Nome completo formatado | `alvaro_nunes_prestes` |
-| `{primeiro_nome}` | Primeiro nome | `alvaro` |
-| `{sobrenome}` | Sobrenome principal | `prestes` |
-| `{matricula}` | Matrícula funcional (se detectada) | `7971` |
-| `{ano}` | Ano da folha (informado ou atual) | `2026` |
-| `{mes}` | Mês da folha (2 dígitos) | `09` |
-| `{pagina}` | Número da página original | `001` |
-
-**Exemplo de template:**
-`{ano}_{mes}_{matricula}_{nome}.pdf` → `2026_09_7971_alvaro_nunes_prestes.pdf`
+```text
+├── Dockerfile             # Container com Python + Tesseract OCR em português
+├── render.yaml            # Configuração de Blueprint para deploy no Render
+├── run.sh                 # Script de execução local rápida
+├── requirements.txt       # Dependências Python (FastAPI, PyMuPDF, etc.)
+├── src/
+│   ├── core/              # Extração de nomes, OCR, Gemini e fatiamento do PDF
+│   └── web/               # Servidor FastAPI e frontend moderno (HTML/CSS/JS)
+├── upload/                # Pasta de entrada para testes
+└── saida/                 # Pasta de saída dos PDFs processados
+```
 
 ---
 
-## 💻 Outros Modos de Uso
-
-### Modo Linha de Comando (CLI)
-
-```bash
-# Processar um PDF específico
-python main.py upload/setembro.pdf -o saida/ --ano 2026 --mes 09 -t "{ano}_{mes}_{nome}.pdf"
-
-# Processar pasta inteira
-python main.py upload/ -o saida/
-```
-
-### Modo Terminal Interativo
-
-```bash
-python main.py --terminal
-```
-
-### Bot do Telegram
-
-1. Configure `TELEGRAM_BOT_TOKEN` no `.env`.
-2. Inicie o bot:
-   ```bash
-   python main.py bot
-   ```
-3. Envie o PDF no chat do bot para receber o `.ZIP` com as folhas separadas.
-
----
-
-## 🧪 Executar Testes
-
-```bash
-python tests/test_split.py
-```
+<div align="center">
+  <sub>Desenvolvido com foco em produtividade e simplicidade.</sub>
+</div>

@@ -107,7 +107,13 @@ def split_pdf(
     """
     cfg = config or SplitJobConfig()
     output_dir.mkdir(parents=True, exist_ok=True)
-    year, month = parse_year_month(cfg.ano, cfg.mes)
+
+    det_year, det_month = None, None
+    if not cfg.ano or not cfg.mes:
+        from .period_detector import detect_document_period
+        det_year, det_month = detect_document_period(input_path, filename=input_path.name)
+
+    year, month = parse_year_month(cfg.ano or det_year, cfg.mes or det_month)
 
     # 1. Análise das páginas se não fornecidas
     if page_records is None and not custom_groups:

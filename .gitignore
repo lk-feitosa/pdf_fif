@@ -28,7 +28,9 @@ saida/.web_sessions/
 *.zip
 *.pdf
 *.png
+!src/web/static/favicon.png
 *.jpg
+!docs/preview.jpg
 *.jpeg
 
 # IDEs e editores

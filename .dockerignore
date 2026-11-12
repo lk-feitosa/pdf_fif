@@ -1,0 +1,12 @@
+.venv
+__pycache__
+*.pyc
+.git
+.gitignore
+.env
+saida/*
+!saida/.gitkeep
+upload/*
+!upload/.gitkeep
+.pytest_cache
+

@@ -8,6 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png">
+  <link rel="shortcut icon" href="/static/favicon.ico">
 </head>
 <body>
 
@@ -79,20 +82,20 @@
           <!-- Prefixo -->
           <div class="prefix-input-group">
             <span class="prefix-label">Prefixo:</span>
-            <input type="text" class="input-prefix" id="inputPrefixo" value="2026_07_" placeholder="2026_07_">
+            <input type="text" class="input-prefix" id="inputPrefixo" value="" placeholder="2026_10_" title="Ano e Mês identificados automaticamente (editável)">
           </div>
 
           <!-- Formato do Nome -->
           <select class="select-format" id="nameFormatSelect">
+            <option value="{primeiro_nome}_{sobrenome}" selected>Primeiro e Sobrenome</option>
             <option value="{nome}">Nome Completo</option>
             <option value="{primeiro_nome}">Primeiro Nome</option>
-            <option value="{primeiro_nome}_{sobrenome}">Primeiro e Sobrenome</option>
             <option value="{matricula}_{nome}">Matrícula + Nome</option>
           </select>
 
           <!-- Live Preview -->
           <div class="preview-pill" id="filenamePreview" title="Exemplo do primeiro arquivo gerado">
-            2026_07_alvaro_nunes_prestes.pdf
+            ...
           </div>
         </div>
       </div>

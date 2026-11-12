@@ -22,6 +22,7 @@ from pydantic import BaseModel
 from ..core.gemini_extractor import is_gemini_available
 from ..core.models import PageRecord, SplitJobConfig
 from ..core.pdf_splitter import analyze_pdf, create_zip_from_results, split_pdf
+from ..core.period_detector import detect_document_period
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -153,18 +154,25 @@ def load_from_upload(filename: str):
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Arquivo PDF inválido: {exc}")
 
+    init_year, init_month = detect_document_period(pdf_path=dest_pdf, filename=filename)
+
     SESSIONS[session_id] = {
         "pdf_path": dest_pdf,
         "filename": filename,
         "total_pages": total_pages,
         "session_dir": session_dir,
         "pages": [],
+        "detected_ano": init_year,
+        "detected_mes": init_month,
     }
 
     return {
         "session_id": session_id,
         "filename": filename,
         "total_pages": total_pages,
+        "detected_ano": init_year,
+        "detected_mes": init_month,
+        "suggested_prefix": f"{init_year}_{init_month}_",
     }
 
 
@@ -189,18 +197,25 @@ async def upload_pdf(file: UploadFile = File(...)):
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Arquivo PDF inválido: {exc}")
 
+    init_year, init_month = detect_document_period(pdf_path=pdf_path, filename=file.filename)
+
     SESSIONS[session_id] = {
         "pdf_path": pdf_path,
         "filename": file.filename,
         "total_pages": total_pages,
         "session_dir": session_dir,
         "pages": [],
+        "detected_ano": init_year,
+        "detected_mes": init_month,
     }
 
     return {
         "session_id": session_id,
         "filename": file.filename,
         "total_pages": total_pages,
+        "detected_ano": init_year,
+        "detected_mes": init_month,
+        "suggested_prefix": f"{init_year}_{init_month}_",
     }
 
 
@@ -222,9 +237,22 @@ def analyze_session(session_id: str, use_gemini: bool = True):
         )
         session["pages"] = records
 
+        # Identifica o mês e ano do documento (via Gemini, cabeçalho OCR ou nome do arquivo)
+        gemini_period = next((r.periodo for r in records if r.periodo), None)
+        detected_year, detected_month = detect_document_period(
+            pdf_path=pdf_path,
+            filename=session.get("filename"),
+            gemini_period=gemini_period,
+        )
+        session["detected_ano"] = detected_year
+        session["detected_mes"] = detected_month
+
         return {
             "session_id": session_id,
             "total_pages": len(records),
+            "detected_ano": detected_year,
+            "detected_mes": detected_month,
+            "suggested_prefix": f"{detected_year}_{detected_month}_",
             "pages": [
                 {
                     "page_num": r.page_num,
@@ -312,8 +340,8 @@ def split_session(session_id: str, payload: SplitRequestModel):
     config = SplitJobConfig(
         template=payload.template,
         prefixo=payload.prefixo,
-        ano=payload.ano,
-        mes=payload.mes,
+        ano=payload.ano or session.get("detected_ano"),
+        mes=payload.mes or session.get("detected_mes"),
         mode=payload.mode,
     )
 
@@ -391,6 +419,14 @@ def download_single_file(session_id: str, filename: str):
 # Monta arquivos estáticos
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    favicon_path = STATIC_DIR / "favicon.ico"
+    if favicon_path.exists():
+        return FileResponse(favicon_path, media_type="image/x-icon")
+    return Response(status_code=404)
 
 
 @app.get("/", response_class=HTMLResponse)
