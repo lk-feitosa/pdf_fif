@@ -1,6 +1,12 @@
 """Testes para o detector automático de ano e mês."""
 
+import sys
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from src.core.period_detector import (
     detect_document_period,
     extract_period_from_filename,
@@ -36,4 +42,10 @@ def test_extract_period_from_filename():
     assert extract_period_from_filename("setembro.pdf") == (None, "09")
     assert extract_period_from_filename("2026_10.pdf") == ("2026", "10")
     assert extract_period_from_filename("10_2026.pdf") == ("2026", "10")
+
+
+if __name__ == "__main__":
+    test_extract_period_from_text()
+    test_extract_period_from_filename()
+    print("OK — testes do detector de período passaram.")
 
