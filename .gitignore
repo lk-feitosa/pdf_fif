@@ -29,6 +29,9 @@ saida/.web_sessions/
 *.pdf
 *.png
 !src/web/static/favicon.png
+!src/web/static/logo.png
+!src/web/static/favicon.ico
+!src/web/static/favicon.svg
 *.jpg
 !docs/preview.jpg
 *.jpeg

@@ -92,6 +92,14 @@ header {
   font-size: 14px;
 }
 
+.brand-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
 .brand-title {
   font-size: 0.95rem;
   font-weight: 600;

@@ -44,6 +44,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/health")
+def health_check():
+    """Endpoint leve para monitoramento de uptime e ping."""
+    return {"status": "ok"}
+
 # Cache de sessões em memória
 # session_id -> { "pdf_path": Path, "total_pages": int, "pages": list[PageRecord], "out_dir": Path, "zip_path": Path }
 SESSIONS: Dict[str, Dict[str, Any]] = {}

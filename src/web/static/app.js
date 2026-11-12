@@ -55,27 +55,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Fetch system status
 async function loadSystemStatus() {
-  try {
-    const res = await fetch('/api/status');
-    const data = await res.json();
-    state.systemStatus = data;
-
-    const dot = document.getElementById('engineDot');
-    const text = document.getElementById('engineStatusText');
-
-    if (data.gemini && data.gemini.available) {
-      dot.className = 'engine-dot';
-      text.textContent = `Gemini AI (${data.gemini.model})`;
-    } else {
-      dot.className = 'engine-dot offline';
-      text.textContent = 'OCR Local (Offline)';
-    }
-
-    if (data.gemini && data.gemini.masked_key) {
-      document.getElementById('geminiApiKeyInput').placeholder = data.gemini.masked_key;
-    }
-  } catch (err) {
-    console.warn('Status error:', err);
+  const dot = document.getElementById('engineDot');
+  const text = document.getElementById('engineStatusText');
+  if (dot && text) {
+    dot.className = 'engine-dot';
+    text.textContent = 'OCR Local Ativo';
   }
 }
 
@@ -146,17 +130,32 @@ function setupEventListeners() {
   btnMergeSelected.addEventListener('click', mergeSelectedGroups);
   btnClearSelection.addEventListener('click', clearGroupSelection);
 
-  // Settings
-  document.getElementById('openSettingsBtn').addEventListener('click', () => {
-    settingsModal.style.display = 'flex';
-  });
-  document.getElementById('closeSettingsBtn').addEventListener('click', () => {
-    settingsModal.style.display = 'none';
-  });
-  document.getElementById('cancelSettingsBtn').addEventListener('click', () => {
-    settingsModal.style.display = 'none';
-  });
-  document.getElementById('settingsForm').addEventListener('submit', handleSaveSettings);
+  // Settings (se o botão existir)
+  const openBtn = document.getElementById('openSettingsBtn');
+  if (openBtn) {
+    openBtn.addEventListener('click', () => {
+      const modal = document.getElementById('settingsModal');
+      if (modal) modal.style.display = 'flex';
+    });
+  }
+  const closeBtn = document.getElementById('closeSettingsBtn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      const modal = document.getElementById('settingsModal');
+      if (modal) modal.style.display = 'none';
+    });
+  }
+  const cancelBtn = document.getElementById('cancelSettingsBtn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      const modal = document.getElementById('settingsModal');
+      if (modal) modal.style.display = 'none';
+    });
+  }
+  const settingsForm = document.getElementById('settingsForm');
+  if (settingsForm) {
+    settingsForm.addEventListener('submit', handleSaveSettings);
+  }
 
   // Modal zoom
   imageViewerModal.addEventListener('click', () => {
@@ -285,13 +284,16 @@ function renderReview() {
           <span class="page-tag ${isMultiPage ? 'multi' : ''}">${pageLabel}</span>
         </label>
         <span style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">
-          ${group.source === 'gemini' ? '✨ Gemini AI' : 'OCR Local'}
+          ${group.source === 'gemini' ? 'Gemini AI' : 'OCR Local'}
         </span>
       </div>
 
       <div class="card-thumbs" title="Clique para ampliar">
         ${thumbsHtml}
-        <span class="thumb-zoom-badge">🔍 Ampliar</span>
+        <span class="thumb-zoom-badge" style="display: inline-flex; align-items: center; gap: 4px;">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          Ampliar
+        </span>
       </div>
 
       <div class="card-body">
@@ -308,7 +310,10 @@ function renderReview() {
         <!-- Preview individual do arquivo deste card -->
         <div class="card-file-preview">
           <div class="card-file-preview-header">
-            <span class="file-preview-label">📄 PDF Gerado</span>
+            <span class="file-preview-label" style="display: inline-flex; align-items: center; gap: 4px;">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+              PDF Gerado
+            </span>
           </div>
           <div class="card-file-preview-name" id="card-filename-${index}">
             ...
@@ -319,8 +324,9 @@ function renderReview() {
       <div class="card-footer">
         <div>
           ${index < state.groups.length - 1 ? `
-            <button class="btn-card-action" data-action="merge-next" data-index="${index}" title="Juntar esta folha com a próxima em 1 só arquivo">
-              🔗 Juntar com próxima
+            <button class="btn-card-action" data-action="merge-next" data-index="${index}" title="Juntar esta folha com a próxima em 1 só arquivo" style="display: inline-flex; align-items: center; gap: 4px;">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+              Juntar com próxima
             </button>
           ` : '<span style="font-size: 0.72rem; color: var(--text-dim);">Última folha</span>'}
         </div>

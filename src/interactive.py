@@ -6,8 +6,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from .naming import normalize_template
-from .pdf_splitter import split_pdf
+from .core.naming import normalize_template
+from .core.pdf_splitter import split_pdf
 
 UPLOAD_DIR = Path("upload")
 OUTPUT_DIR = Path("saida")

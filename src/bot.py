@@ -19,8 +19,8 @@ from telegram.ext import (
     filters,
 )
 
-from .naming import default_template, normalize_template
-from .pdf_splitter import create_zip_from_results, split_pdf
+from .core.naming import default_template, normalize_template
+from .core.pdf_splitter import create_zip_from_results, split_pdf
 
 load_dotenv()
 

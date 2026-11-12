@@ -95,6 +95,11 @@ def split_pdf(
     input_path: Path,
     output_dir: Path,
     *,
+    template: str = "{ano}_{mes}_{nome}.pdf",
+    prefixo: Optional[str] = None,
+    ano: Optional[str] = None,
+    mes: Optional[str] = None,
+    mode: str = "one_per_page",
     config: Optional[SplitJobConfig] = None,
     page_records: Optional[list[PageRecord]] = None,
     custom_groups: Optional[list[tuple[str, str | None, list[int]]]] = None,
@@ -105,7 +110,15 @@ def split_pdf(
     Se custom_groups for fornecido, utiliza os agrupamentos manuais definidos pelo usuário.
     Se page_records já for fornecido (ex: via UI após revisão), pula a etapa de análise.
     """
-    cfg = config or SplitJobConfig()
+    if config is None:
+        config = SplitJobConfig(
+            template=template,
+            prefixo=prefixo,
+            ano=ano,
+            mes=mes,
+            mode=mode,
+        )
+    cfg = config
     output_dir.mkdir(parents=True, exist_ok=True)
 
     det_year, det_month = None, None

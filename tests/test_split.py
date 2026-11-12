@@ -12,8 +12,14 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.name_extractor import extract_name_from_text
-from src.pdf_splitter import split_pdf
+from src.core.local_extractor import _extract_from_text_stream
+from src.core.naming import normalize_template
+from src.core.pdf_splitter import split_pdf
+
+
+def extract_name_from_text(text: str) -> str | None:
+    nome, _ = _extract_from_text_stream(text)
+    return nome
 
 
 def _make_sample_pdf(path: Path) -> None:
@@ -36,8 +42,6 @@ def test_extract_names() -> None:
 
 
 def test_normalize_template() -> None:
-    from src.naming import normalize_template
-
     assert normalize_template("2026_08_*nome*.pdf") == "2026_08_{primeiro_nome}.pdf"
     assert normalize_template("*nome_completo*.pdf") == "{nome}.pdf"
 

@@ -7,8 +7,8 @@ import argparse
 import sys
 from pathlib import Path
 
-from .naming import default_template
-from .pdf_splitter import split_pdf
+from .core.naming import default_template
+from .core.pdf_splitter import split_pdf
 
 
 def build_parser() -> argparse.ArgumentParser:
