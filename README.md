@@ -2,7 +2,7 @@
   <img src="src/web/static/logo.png" alt="PDF FIF Logo" width="88" style="border-radius: 16px; box-shadow: 0 4px 18px rgba(0,0,0,0.25);">
   <h1>PDF FIF</h1>
   <p><strong>Separador Automático de Folhas Individuais de Frequência</strong></p>
-  <p>Processa lotes de folhas de frequência escaneadas, identifica servidores via <strong>OCR Local (100% offline)</strong> e gera arquivos individuais padronizados em <code>.ZIP</code>.</p>
+  <p>Aplicação para processar documentos de frequência digitalizados, identificar servidores com OCR local e gerar arquivos individuais padronizados.</p>
 
   <p>
     <a href="https://render.com/deploy?repo=https://github.com/lk-feitosa/pdf_fif">
@@ -13,71 +13,78 @@
 
 ---
 
-## Como Rodar Localmente
+## Sobre o projeto
+
+O PDF FIF automatiza a separação de folhas individuais de frequência a partir de arquivos PDF digitalizados. O sistema reconhece nomes e períodos de referência, organiza os documentos e disponibiliza os resultados em um arquivo `.ZIP`.
+
+O processamento é realizado localmente, com OCR offline, sem depender de serviços externos para a operação principal.
+
+## Principais recursos
+
+- Processamento de lotes de folhas de frequência em PDF
+- OCR local com suporte ao português
+- Identificação automática de servidor, ano e mês de referência
+- Geração de arquivos individuais em PDF
+- Personalização do padrão de nomenclatura dos arquivos
+- Interface web, linha de comando e bot do Telegram
+
+## Execução local
 
 ```bash
-# Clone e acesse o diretório do projeto
 git clone https://github.com/lk-feitosa/pdf_fif.git
 cd pdf_fif
-
-# Inicia o projeto (instala dependências e abre o servidor web)
 ./run.sh
 ```
 
-Acesse no navegador: **`http://localhost:8000`**
+A aplicação estará disponível em `http://localhost:8000`.
 
-*(Ou via Docker: `docker build -t pdf-fif . && docker run -p 8000:8000 pdf-fif`)*
+Também é possível executar com Docker:
 
----
+```bash
+docker build -t pdf-fif .
+docker run -p 8000:8000 pdf-fif
+```
 
-## Deploy no Render
+## Deploy
 
-1. Clique no botão **Deploy to Render** acima (ou crie um novo **Web Service** conectado ao repositório).
-2. O Render utilizará o [`Dockerfile`](Dockerfile) automaticamente.
-3. Não é necessária nenhuma configuração de chave ou banco de dados — o serviço inicia pronto para uso no plano gratuito.
+O projeto pode ser publicado no Render usando o botão acima ou conectado como um novo Web Service. A configuração de deploy está definida no `Dockerfile` e no `render.yaml`.
 
----
+## Nomenclatura dos arquivos
 
-## Nomenclatura e Exemplos
+O sistema detecta automaticamente o período de referência e permite escolher diferentes formatos de saída:
 
-O sistema detecta automaticamente o ano e o mês de referência (ex: `2026_10_`) e permite personalizar o padrão de saída com dados fictícios de exemplo:
-
-| Formato Selecionado | Padrão Gerado (Exemplo Fictício) |
+| Formato | Exemplo |
 |---|---|
-| Primeiro e Sobrenome | `2026_10_maria_silva.pdf` |
-| Nome Completo | `2026_10_maria_da_silva_santos.pdf` |
-| Primeiro Nome | `2026_10_maria.pdf` |
-| Matrícula + Nome | `2026_10_12345_maria_silva.pdf` |
+| Primeiro e sobrenome | `2026_10_maria_silva.pdf` |
+| Nome completo | `2026_10_maria_da_silva_santos.pdf` |
+| Primeiro nome | `2026_10_maria.pdf` |
+| Matrícula e nome | `2026_10_12345_maria_silva.pdf` |
 
----
+## Configuração
 
-## Configurações (.env)
-
-O sistema opera **100% offline** por padrão utilizando PyMuPDF e Tesseract OCR:
+O processamento local utiliza PyMuPDF e Tesseract OCR. As principais variáveis de ambiente são:
 
 | Variável | Padrão | Descrição |
 |---|:---:|---|
-| `PORT` | `8000` | Porta onde o servidor responderá. |
-| `GEMINI_API_KEY` | *vazia* | *(Opcional)* Chave do Google AI Studio para suporte via IA se desejar no futuro. |
-| `GEMINI_MODEL` | `gemini-2.0-flash` | *(Opcional)* Modelo de visão caso a chave seja configurada. |
-| `TELEGRAM_BOT_TOKEN` | *vazia* | *(Opcional)* Token do bot do Telegram para processamento via chat. |
+| `PORT` | `8000` | Porta do servidor web. |
+| `GEMINI_API_KEY` | vazia | Chave opcional para recursos de IA. |
+| `GEMINI_MODEL` | `gemini-2.0-flash` | Modelo opcional de visão. |
+| `TELEGRAM_BOT_TOKEN` | vazia | Token opcional do bot do Telegram. |
 
----
-
-## Estrutura do Projeto
+## Estrutura do projeto
 
 ```text
-├── Dockerfile             # Container com Python 3.11 + Tesseract OCR em português
-├── render.yaml            # Blueprint de deploy para o Render
-├── run.sh                 # Script de execução rápida
+├── Dockerfile             # Container com Python 3.11 e Tesseract OCR
+├── render.yaml            # Configuração de deploy no Render
+├── run.sh                 # Script de execução
 ├── requirements.txt       # Dependências da aplicação
 ├── src/
-│   ├── core/              # Extração de nomes, OCR local, detector de período e fatiamento
-│   ├── web/               # Servidor FastAPI e interface web (HTML/CSS/JS)
+│   ├── core/              # OCR, extração, detecção e separação de documentos
+│   ├── web/               # Servidor FastAPI e interface web
 │   ├── cli.py             # Interface de linha de comando
 │   ├── interactive.py     # Modo interativo no terminal
 │   └── bot.py             # Bot do Telegram
-├── tests/                 # Testes unitários automatizados
-├── upload/                # Pasta para entrada de testes
-└── saida/                 # Pasta de saída dos arquivos gerados
+├── tests/                 # Testes automatizados
+├── upload/                # Arquivos de entrada
+└── saida/                 # Arquivos processados
 ```
